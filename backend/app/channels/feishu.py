@@ -461,7 +461,7 @@ class FeishuChannel(Channel):
             sender_id = event.event.sender.sender_id.open_id
 
             root_id = getattr(message, "root_id", None) or None
-            chat_type = getattr(message, "chat_type", None) or "p2p"
+            chat_type = getattr(message, "chat_type", None)
 
             # Parse message content
             content = json.loads(message.content)
