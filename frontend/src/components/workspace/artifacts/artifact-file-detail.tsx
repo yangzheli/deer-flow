@@ -188,7 +188,11 @@ export function ArtifactFileDetail({
               </Tooltip>
             )}
             {!isWriteFile && (
-              <a href={urlOfArtifact({ filepath, threadId })} target="_blank" rel="noopener noreferrer">
+              <a
+                href={urlOfArtifact({ filepath, threadId })}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 <ArtifactAction
                   icon={SquareArrowOutUpRightIcon}
                   label={t.common.openInNewWindow}
