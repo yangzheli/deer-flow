@@ -1,6 +1,7 @@
 # Backend Dockerfile — multi-stage build
 # Stage 1 (builder): compiles native Python extensions with build-essential
-# Stage 2 (runtime): clean image without compiler toolchain
+# Stage 2 (dev):     retains toolchain for dev containers (uv sync at startup)
+# Stage 3 (runtime): clean image without compiler toolchain for production
 
 # UV source image (override for restricted networks that cannot reach ghcr.io)
 ARG UV_IMAGE=ghcr.io/astral-sh/uv:0.7.20
@@ -45,7 +46,19 @@ COPY backend ./backend
 RUN --mount=type=cache,target=/root/.cache/uv \
     sh -c "cd backend && UV_INDEX_URL=${UV_INDEX_URL:-https://pypi.org/simple} uv sync"
 
-# ── Stage 2: Runtime ──────────────────────────────────────────────────────────
+# ── Stage 2: Dev ──────────────────────────────────────────────────────────────
+# Retains compiler toolchain from builder so startup-time `uv sync` can build
+# source distributions in development containers.
+FROM builder AS dev
+
+# Install Docker CLI (for DooD: allows starting sandbox containers via host Docker socket)
+COPY --from=docker:cli /usr/local/bin/docker /usr/local/bin/docker
+
+EXPOSE 8001 2024
+
+CMD ["sh", "-c", "cd backend && PYTHONPATH=. uv run uvicorn app.gateway.app:app --host 0.0.0.0 --port 8001"]
+
+# ── Stage 3: Runtime ──────────────────────────────────────────────────────────
 # Clean image without build-essential — reduces size (~200 MB) and attack surface.
 FROM python:3.12-slim-bookworm
 
