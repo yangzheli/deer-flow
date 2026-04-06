@@ -284,7 +284,7 @@ function ToolCall({
         label={t.toolCalls.viewWebPage}
         icon={GlobeIcon}
         onClick={() => {
-          window.open(url, "_blank");
+          window.open(url, "_blank", "noopener,noreferrer");
         }}
       >
         <ChainOfThoughtSearchResult>
