@@ -193,11 +193,12 @@ export function ArtifactFileDetail({
                 label={t.common.openInNewWindow}
                 tooltip={t.common.openInNewWindow}
                 onClick={() => {
-                  window.open(
+                  const w = window.open(
                     urlOfArtifact({ filepath, threadId }),
                     "_blank",
                     "noopener,noreferrer",
                   );
+                  if (w) w.opener = null;
                 }}
               />
             )}
@@ -224,11 +225,12 @@ export function ArtifactFileDetail({
                 label={t.common.download}
                 tooltip={t.common.download}
                 onClick={() => {
-                  window.open(
+                  const w = window.open(
                     urlOfArtifact({ filepath, threadId, download: true }),
                     "_blank",
                     "noopener,noreferrer",
                   );
+                  if (w) w.opener = null;
                 }}
               />
             )}
