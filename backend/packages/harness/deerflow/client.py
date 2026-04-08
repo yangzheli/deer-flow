@@ -40,6 +40,7 @@ from deerflow.config.app_config import get_app_config, reload_app_config
 from deerflow.config.extensions_config import ExtensionsConfig, SkillStateConfig, get_extensions_config, reload_extensions_config
 from deerflow.config.paths import get_paths
 from deerflow.models import create_chat_model
+from deerflow.tracing import build_tracing_callbacks
 from deerflow.skills.installer import install_skill_from_archive
 from deerflow.uploads.manager import (
     claim_unique_filename,
@@ -198,10 +199,16 @@ class DeerFlowClient:
             "is_plan_mode": overrides.get("plan_mode", self._plan_mode),
             "subagent_enabled": overrides.get("subagent_enabled", self._subagent_enabled),
         }
-        return RunnableConfig(
+        config = RunnableConfig(
             configurable=configurable,
             recursion_limit=overrides.get("recursion_limit", 100),
         )
+        # Inject tracing callbacks at graph level so providers like Langfuse
+        # create a single trace per invocation instead of one per model call.
+        tracing_callbacks = build_tracing_callbacks()
+        if tracing_callbacks:
+            config["callbacks"] = tracing_callbacks
+        return config
 
     def _ensure_agent(self, config: RunnableConfig):
         """Create (or recreate) the agent when config-dependent params change."""
@@ -224,7 +231,7 @@ class DeerFlowClient:
         max_concurrent_subagents = cfg.get("max_concurrent_subagents", 3)
 
         kwargs: dict[str, Any] = {
-            "model": create_chat_model(name=model_name, thinking_enabled=thinking_enabled),
+            "model": create_chat_model(name=model_name, thinking_enabled=thinking_enabled, attach_tracing=False),
             "tools": self._get_tools(model_name=model_name, subagent_enabled=subagent_enabled),
             "middleware": _build_middlewares(config, model_name=model_name, agent_name=self._agent_name, custom_middlewares=self._middlewares),
             "system_prompt": apply_prompt_template(

@@ -19,6 +19,7 @@ from deerflow.config.agents_config import load_agent_config
 from deerflow.config.app_config import get_app_config
 from deerflow.config.summarization_config import get_summarization_config
 from deerflow.models import create_chat_model
+from deerflow.tracing import build_tracing_callbacks
 
 logger = logging.getLogger(__name__)
 
@@ -56,13 +57,14 @@ def _create_summarization_middleware() -> SummarizationMiddleware | None:
     # Prepare keep parameter
     keep = config.keep.to_tuple()
 
-    # Prepare model parameter
+    # Prepare model parameter — attach_tracing=False because the graph-level
+    # RunnableConfig already carries tracing callbacks for in-graph models.
     if config.model_name:
-        model = create_chat_model(name=config.model_name, thinking_enabled=False)
+        model = create_chat_model(name=config.model_name, thinking_enabled=False, attach_tracing=False)
     else:
         # Use a lightweight model for summarization to save costs
         # Falls back to default model if not explicitly specified
-        model = create_chat_model(thinking_enabled=False)
+        model = create_chat_model(thinking_enabled=False, attach_tracing=False)
 
     # Prepare kwargs
     kwargs = {
@@ -328,10 +330,17 @@ def make_lead_agent(config: RunnableConfig):
         }
     )
 
+    # Inject tracing callbacks at graph level so providers like Langfuse
+    # create a single trace per invocation instead of one per model call.
+    tracing_callbacks = build_tracing_callbacks()
+    if tracing_callbacks:
+        existing = config.get("callbacks") or []
+        config["callbacks"] = [*existing, *tracing_callbacks]
+
     if is_bootstrap:
         # Special bootstrap agent with minimal prompt for initial custom agent creation flow
         return create_agent(
-            model=create_chat_model(name=model_name, thinking_enabled=thinking_enabled),
+            model=create_chat_model(name=model_name, thinking_enabled=thinking_enabled, attach_tracing=False),
             tools=get_available_tools(model_name=model_name, subagent_enabled=subagent_enabled) + [setup_agent],
             middleware=_build_middlewares(config, model_name=model_name),
             system_prompt=apply_prompt_template(subagent_enabled=subagent_enabled, max_concurrent_subagents=max_concurrent_subagents, available_skills=set(["bootstrap"])),
@@ -340,7 +349,7 @@ def make_lead_agent(config: RunnableConfig):
 
     # Default lead agent (unchanged behavior)
     return create_agent(
-        model=create_chat_model(name=model_name, thinking_enabled=thinking_enabled, reasoning_effort=reasoning_effort),
+        model=create_chat_model(name=model_name, thinking_enabled=thinking_enabled, reasoning_effort=reasoning_effort, attach_tracing=False),
         tools=get_available_tools(model_name=model_name, groups=agent_config.tool_groups if agent_config else None, subagent_enabled=subagent_enabled),
         middleware=_build_middlewares(config, model_name=model_name, agent_name=agent_name),
         system_prompt=apply_prompt_template(

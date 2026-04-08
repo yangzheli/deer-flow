@@ -30,7 +30,7 @@ def _vllm_disable_chat_template_kwargs(chat_template_kwargs: dict) -> dict:
     return disable_kwargs
 
 
-def create_chat_model(name: str | None = None, thinking_enabled: bool = False, **kwargs) -> BaseChatModel:
+def create_chat_model(name: str | None = None, thinking_enabled: bool = False, *, attach_tracing: bool = True, **kwargs) -> BaseChatModel:
     """Create a chat model instance from the config.
 
     Args:
@@ -111,9 +111,13 @@ def create_chat_model(name: str | None = None, thinking_enabled: bool = False, *
 
     model_instance = model_class(**kwargs, **model_settings_from_config)
 
-    callbacks = build_tracing_callbacks()
-    if callbacks:
-        existing_callbacks = model_instance.callbacks or []
-        model_instance.callbacks = [*existing_callbacks, *callbacks]
-        logger.debug(f"Tracing attached to model '{name}' with providers={len(callbacks)}")
+    # Attach tracing callbacks for standalone model calls (memory, title,
+    # suggestions, etc.).  Models used inside a graph should pass
+    # attach_tracing=False.
+    if attach_tracing:
+        callbacks = build_tracing_callbacks()
+        if callbacks:
+            existing_callbacks = model_instance.callbacks or []
+            model_instance.callbacks = [*existing_callbacks, *callbacks]
+
     return model_instance
