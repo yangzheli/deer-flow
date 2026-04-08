@@ -40,8 +40,8 @@ from deerflow.config.app_config import get_app_config, reload_app_config
 from deerflow.config.extensions_config import ExtensionsConfig, SkillStateConfig, get_extensions_config, reload_extensions_config
 from deerflow.config.paths import get_paths
 from deerflow.models import create_chat_model
-from deerflow.tracing import build_tracing_callbacks
 from deerflow.skills.installer import install_skill_from_archive
+from deerflow.tracing import build_tracing_callbacks
 from deerflow.uploads.manager import (
     claim_unique_filename,
     delete_file_safe,
