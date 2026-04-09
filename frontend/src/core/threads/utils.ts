@@ -4,10 +4,10 @@ import type { AgentThread, AgentThreadContext } from "./types";
 
 type ThreadRouteTarget =
   | string
-  | Pick<AgentThread, "thread_id" | "context">
   | {
       thread_id: string;
       context?: Pick<AgentThreadContext, "agent_name"> | null;
+      metadata?: Record<string, unknown> | null;
     };
 
 export function pathOfThread(
@@ -18,7 +18,10 @@ export function pathOfThread(
   const agentName =
     typeof thread === "string"
       ? context?.agent_name
-      : thread.context?.agent_name;
+      : (thread.context?.agent_name ??
+        (typeof thread.metadata?.agent_name === "string"
+          ? thread.metadata.agent_name
+          : undefined));
 
   return agentName
     ? `/workspace/agents/${encodeURIComponent(agentName)}/chats/${threadId}`
