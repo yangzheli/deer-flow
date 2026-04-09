@@ -19,6 +19,7 @@ from langchain_core.runnables import RunnableConfig
 from deerflow.agents.thread_state import SandboxState, ThreadDataState, ThreadState
 from deerflow.models import create_chat_model
 from deerflow.subagents.config import SubagentConfig
+from deerflow.tracing import build_tracing_callbacks
 
 logger = logging.getLogger(__name__)
 
@@ -169,7 +170,7 @@ class SubagentExecutor:
     def _create_agent(self):
         """Create the agent instance."""
         model_name = _get_model_name(self.config, self.parent_model)
-        model = create_chat_model(name=model_name, thinking_enabled=False)
+        model = create_chat_model(name=model_name, thinking_enabled=False, attach_tracing=False)
 
         from deerflow.agents.middlewares.tool_error_handling_middleware import build_subagent_runtime_middlewares
 
@@ -236,6 +237,13 @@ class SubagentExecutor:
             run_config: RunnableConfig = {
                 "recursion_limit": self.config.max_turns,
             }
+
+            # Inject tracing callbacks at graph level so providers like Langfuse
+            # create a single trace per subagent run instead of one per LLM call.
+            tracing_callbacks = build_tracing_callbacks()
+            if tracing_callbacks:
+                run_config["callbacks"] = tracing_callbacks
+
             context = {}
             if self.thread_id:
                 run_config["configurable"] = {"thread_id": self.thread_id}
