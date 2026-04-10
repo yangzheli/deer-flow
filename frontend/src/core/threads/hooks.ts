@@ -213,8 +213,8 @@ export function useThreadStream({
       handleStreamStart(meta.thread_id);
       setOnStreamThreadId(meta.thread_id);
       if (context.agent_name && !isMock) {
-        void getAPIClient().threads
-          .update(meta.thread_id, {
+        void getAPIClient()
+          .threads.update(meta.thread_id, {
             metadata: { agent_name: context.agent_name },
           })
           .catch(() => ({}));
