@@ -212,10 +212,12 @@ export function useThreadStream({
     onCreated(meta) {
       handleStreamStart(meta.thread_id);
       setOnStreamThreadId(meta.thread_id);
-      if (context.agent_name) {
-        void getAPIClient(isMock).threads.update(meta.thread_id, {
-          metadata: { agent_name: context.agent_name },
-        });
+      if (context.agent_name && !isMock) {
+        void getAPIClient().threads
+          .update(meta.thread_id, {
+            metadata: { agent_name: context.agent_name },
+          })
+          .catch(() => ({}));
       }
     },
     onLangChainEvent(event) {

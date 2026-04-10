@@ -15,13 +15,18 @@ export function pathOfThread(
   context?: Pick<AgentThreadContext, "agent_name"> | null,
 ) {
   const threadId = typeof thread === "string" ? thread : thread.thread_id;
-  const agentName =
-    typeof thread === "string"
-      ? context?.agent_name
-      : (thread.context?.agent_name ??
-        (typeof thread.metadata?.agent_name === "string"
-          ? thread.metadata.agent_name
-          : undefined));
+  let agentName: string | undefined;
+  if (typeof thread === "string") {
+    agentName = context?.agent_name;
+  } else {
+    agentName = thread.context?.agent_name;
+    if (!agentName) {
+      const metaAgent = thread.metadata?.agent_name;
+      if (typeof metaAgent === "string") {
+        agentName = metaAgent;
+      }
+    }
+  }
 
   return agentName
     ? `/workspace/agents/${encodeURIComponent(agentName)}/chats/${threadId}`
