@@ -1892,9 +1892,10 @@ class TestFeishuChatTypeThread:
             for _ in range(3):
                 msg = await asyncio.wait_for(bus.get_inbound(), timeout=2)
                 assert msg.topic_id is None
-                
+
         _run(go())
-        
+
+
 class TestWeComChannel:
     def test_publish_ws_inbound_starts_stream_and_publishes_message(self, monkeypatch):
         from app.channels.wecom import WeComChannel
