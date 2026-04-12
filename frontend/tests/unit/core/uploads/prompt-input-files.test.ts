@@ -1,6 +1,9 @@
 import { afterEach, expect, test, vi } from "vitest";
 
-import { promptInputFilePartToFile } from "@/core/uploads/prompt-input-files";
+import {
+  type PromptInputFilePart,
+  promptInputFilePartToFile,
+} from "@/core/uploads/prompt-input-files";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -54,7 +57,7 @@ test("rewraps the original File when the prompt metadata changes", async () => {
     filename: "renamed.txt",
     mediaType: "text/markdown",
     file,
-  });
+  } as PromptInputFilePart);
 
   expect(converted).toBeTruthy();
   expect(converted).not.toBe(file);
@@ -67,7 +70,7 @@ test("returns null when upload preparation is missing required data", async () =
   const converted = await promptInputFilePartToFile({
     type: "file",
     mediaType: "text/plain",
-  });
+  } as PromptInputFilePart);
 
   expect(converted).toBeNull();
 });
@@ -86,7 +89,7 @@ test("returns null when the URL fallback fetch fails", async () => {
     type: "file",
     filename: "note.txt",
     url: "blob:http://localhost:2026/missing-preview-url",
-  });
+  } as PromptInputFilePart);
 
   expect(converted).toBeNull();
   expect(warnSpy).toHaveBeenCalledOnce();
@@ -110,7 +113,7 @@ test("returns null when the URL fallback fetch response is non-ok", async () => 
     type: "file",
     filename: "note.txt",
     url: "blob:http://localhost:2026/missing-preview-url",
-  });
+  } as PromptInputFilePart);
 
   expect(converted).toBeNull();
   expect(warnSpy).toHaveBeenCalledOnce();
