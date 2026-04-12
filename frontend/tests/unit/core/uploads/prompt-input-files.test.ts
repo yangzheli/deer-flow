@@ -73,7 +73,7 @@ test("returns null when upload preparation is missing required data", async () =
 });
 
 test("returns null when the URL fallback fetch fails", async () => {
-  const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+  const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => ({}));
 
   vi.stubGlobal(
     "fetch",
@@ -93,7 +93,7 @@ test("returns null when the URL fallback fetch fails", async () => {
 });
 
 test("returns null when the URL fallback fetch response is non-ok", async () => {
-  const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+  const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => ({}));
 
   vi.stubGlobal(
     "fetch",
