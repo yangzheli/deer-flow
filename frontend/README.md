@@ -53,6 +53,9 @@ pnpm lint
 # Run unit tests
 pnpm test
 
+# Run E2E tests (requires Chromium)
+pnpm test:e2e
+
 # Build for production
 pnpm build
 
@@ -86,6 +89,7 @@ NEXT_PUBLIC_LANGGRAPH_BASE_URL="http://localhost:2024"
 
 ```
 tests/
+├── e2e/                    # E2E tests (Playwright, Chromium, mocked backend)
 └── unit/                   # Unit tests (mirrors src/ layout)
 src/
 ├── app/                    # Next.js App Router pages
@@ -125,6 +129,7 @@ src/
 | `pnpm build`        | Build for production                    |
 | `pnpm start`        | Start production server                 |
 | `pnpm test`         | Run unit tests with Vitest              |
+| `pnpm test:e2e`     | Run E2E tests with Playwright           |
 | `pnpm format`       | Check formatting with Prettier          |
 | `pnpm format:write` | Apply formatting with Prettier          |
 | `pnpm lint`         | Run ESLint                              |
