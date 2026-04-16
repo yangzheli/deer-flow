@@ -304,7 +304,7 @@ make test
 cd frontend
 make test
 
-# Frontend E2E tests (requires Chromium; auto-starts Next.js dev server)
+# Frontend E2E tests (requires Chromium; builds and auto-starts the Next.js production server)
 cd frontend
 make test-e2e
 ```

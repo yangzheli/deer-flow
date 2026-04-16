@@ -208,9 +208,9 @@ export function mockLangGraphAPI(page: Page, options?: MockAPIOptions) {
       }
     }
     return route.fulfill({
-      status: 200,
+      status: 404,
       contentType: "application/json",
-      body: "{}",
+      body: JSON.stringify({ detail: "Agent not found" }),
     });
   });
 }

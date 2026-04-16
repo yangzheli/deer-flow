@@ -53,7 +53,10 @@ pnpm lint
 # Run unit tests
 pnpm test
 
-# Run E2E tests (requires Chromium)
+# One-time setup: install Playwright Chromium browser
+pnpm exec playwright install chromium
+
+# Run E2E tests (builds and starts production server automatically)
 pnpm test:e2e
 
 # Build for production

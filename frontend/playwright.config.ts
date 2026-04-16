@@ -22,7 +22,7 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: "SKIP_ENV_VALIDATION=1 pnpm build && pnpm start",
+    command: "pnpm build && pnpm start",
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
