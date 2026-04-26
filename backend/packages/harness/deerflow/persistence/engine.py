@@ -10,6 +10,7 @@ None and fall back to in-memory implementations.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 
@@ -88,7 +89,10 @@ async def init_engine(
 
         from sqlalchemy import event
 
-        os.makedirs(sqlite_dir or ".", exist_ok=True)
+        # Run blocking I/O off the event loop so dev-mode tools like
+        # ``blockbuster`` (used by ``langgraph dev``) do not flag this
+        # path. Harmless in production where blockbuster is not active.
+        await asyncio.to_thread(os.makedirs, sqlite_dir or ".", exist_ok=True)
         _engine = create_async_engine(url, echo=echo, json_serializer=_json_serializer)
 
         # Enable WAL on every new connection. SQLite PRAGMA settings are
@@ -161,13 +165,23 @@ async def init_engine_from_config(config) -> None:
     if config.backend == "memory":
         await init_engine("memory")
         return
-    await init_engine(
-        backend=config.backend,
-        url=config.app_sqlalchemy_url,
-        echo=config.echo_sql,
-        pool_size=config.pool_size,
-        sqlite_dir=config.sqlite_dir if config.backend == "sqlite" else "",
-    )
+
+    # Resolve URL/dir off the event loop because, for sqlite, reading
+    # ``config.app_sqlalchemy_url`` triggers ``Path.resolve()`` which
+    # internally calls ``os.getcwd`` — a blocking syscall that
+    # ``langgraph dev``'s blockbuster instrumentation refuses to allow
+    # on the event loop. Harmless in production.
+    def _resolve_kwargs() -> dict:
+        return {
+            "backend": config.backend,
+            "url": config.app_sqlalchemy_url,
+            "echo": config.echo_sql,
+            "pool_size": config.pool_size,
+            "sqlite_dir": config.sqlite_dir if config.backend == "sqlite" else "",
+        }
+
+    kwargs = await asyncio.to_thread(_resolve_kwargs)
+    await init_engine(**kwargs)
 
 
 def get_session_factory() -> async_sessionmaker[AsyncSession] | None:

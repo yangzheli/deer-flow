@@ -10,6 +10,8 @@ Two layers:
   2. @auth.on — returns metadata filter so each user only sees own threads
 """
 
+import asyncio
+import logging
 import secrets
 
 from langgraph_sdk import Auth
@@ -18,7 +20,47 @@ from app.gateway.auth.errors import TokenError
 from app.gateway.auth.jwt import decode_token
 from app.gateway.deps import get_local_provider
 
+logger = logging.getLogger(__name__)
+
 auth = Auth()
+
+# LangGraph Server runs as a separate process from the FastAPI Gateway and
+# does not execute Gateway's lifespan startup. We must therefore lazily
+# initialize the SQLAlchemy engine on first auth request so that
+# ``get_local_provider()`` can construct its repository against a real
+# session factory. ``_engine_init_done`` short-circuits the fast path; the
+# lock ensures concurrent first requests do not race the init.
+_engine_init_lock = asyncio.Lock()
+_engine_init_done = False
+
+
+async def _ensure_engine() -> None:
+    """Idempotently initialize the persistence engine in this process.
+
+    Skip when already initialized (Gateway path) or already attempted.
+    Safe to call concurrently from multiple authenticate handlers.
+    """
+    global _engine_init_done
+    if _engine_init_done:
+        return
+
+    from deerflow.persistence.engine import get_session_factory, init_engine_from_config
+
+    if get_session_factory() is not None:
+        _engine_init_done = True
+        return
+
+    async with _engine_init_lock:
+        if _engine_init_done or get_session_factory() is not None:
+            _engine_init_done = True
+            return
+        from deerflow.config import get_app_config
+
+        config = get_app_config().database
+        await init_engine_from_config(config)
+        _engine_init_done = True
+        logger.info("LangGraph Server: persistence engine lazily initialized (backend=%s)", config.backend)
+
 
 # Methods that require CSRF validation (state-changing per RFC 7231).
 _CSRF_METHODS = frozenset({"POST", "PUT", "DELETE", "PATCH"})
@@ -75,6 +117,10 @@ async def authenticate(request):
             status_code=401,
             detail=f"Token error: {payload.value}",
         )
+
+    # Ensure the persistence engine is initialized in this (LangGraph Server)
+    # process before reaching for the user repository.
+    await _ensure_engine()
 
     user = await get_local_provider().get_user(payload.sub)
     if user is None:

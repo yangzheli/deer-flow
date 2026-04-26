@@ -35,6 +35,13 @@ def _setup_auth_config():
     set_auth_config(AuthConfig(jwt_secret=_JWT_SECRET))
 
 
+@pytest.fixture(autouse=True)
+def _stub_ensure_engine():
+    """Skip lazy DB engine init in unit tests — provider is mocked anyway."""
+    with patch("app.gateway.langgraph_auth._ensure_engine", new=AsyncMock(return_value=None)):
+        yield
+
+
 def _req(cookies=None, method="GET", headers=None):
     return SimpleNamespace(cookies=cookies or {}, method=method, headers=headers or {})
 
