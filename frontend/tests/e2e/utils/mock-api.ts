@@ -213,11 +213,14 @@ export function mockLangGraphAPI(page: Page, options?: MockAPIOptions) {
 
   // Follow-up suggestions — input box auto-suggest after AI response
   void page.route("**/api/threads/*/suggestions", (route) => {
-    return route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({ suggestions: [] }),
-    });
+    if (route.request().method() === "POST") {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ suggestions: [] }),
+      });
+    }
+    return route.fallback();
   });
 
   // Agents list — sidebar & gallery page
