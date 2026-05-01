@@ -1,0 +1,25 @@
+{
+  "cookies": [
+    {
+      "name": "access_token",
+      "value": "xxx",
+      "domain": "localhost",
+      "path": "/",
+      "expires": 1778168454,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "csrf_token",
+      "value": "xxx",
+      "domain": "localhost",
+      "path": "/",
+      "expires": -1,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    }
+  ],
+  "origins": []
+}
